@@ -81,7 +81,18 @@ struct iterator_traits<T*>
     typedef ptrdiff_t difference_type;
 };
 
+template<class T>
+struct iterator_traits<const T*>
+{
+    typedef random_access_iterator_tag iterator_tag;
+    typedef T value_type;
+    typedef T* pointer;
+    typedef T& reference;
+    typedef ptrdiff_t difference_type;
+};
 
+template <class T,class U,bool=has_iterator_cat<iterator_traits<T>>::value>
+struct has_iteratorcat_of:public m_bool_constant<std::is_convertible<typename iterator_traits<T>::iterator_category,U>::value>{};
 
 }
 
