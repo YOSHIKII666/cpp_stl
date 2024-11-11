@@ -94,6 +94,11 @@ struct iterator_traits<const T*>
 template <class T,class U,bool=has_iterator_cat<iterator_traits<T>>::value>
 struct has_iteratorcat_of:public m_bool_constant<std::is_convertible<typename iterator_traits<T>::iterator_category,U>::value>{};
 
+struct xxx
+{
+    /* data */
+};
+
 }
 
 
