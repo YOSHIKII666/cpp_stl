@@ -99,6 +99,11 @@ struct xxx
     /* data */
 };
 
+struct xxx11
+{
+    /* data */
+};
+
 }
 
 
