@@ -16,7 +16,8 @@ namespace mystl{
     {
         return static_cast<T&&>(arg);
     }
-
+    //通过 std::forward 转发参数就能确保根据原始参数是左值还是右值准确地调用对应的函数重载版本，
+    //避免出现因错误的类型转换而导致调用不符合预期的函数重载情况。
     template<class T>
     T&& forward(typename std::remove_reference<T>::type&& arg)noexcept//
     {
