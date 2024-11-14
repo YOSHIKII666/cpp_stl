@@ -4,6 +4,11 @@
 #include<cstddef>
 #include"type_traits.h"
 namespace mystl{
+    /*
+        forward和move的区别：
+            move是把接收到的参数强制转为右值引用传递回去,无论是左值还是右值引用都传回去。
+            forward是在接收参数时，会转为左值引用，那么在static_cast<T&&>过程中，返回的是T && &,相当于T&，不会改变原来的结构，导致出现错误的情况。
+    */
 
     template<class T>
     typename std::remove_reference<T>::type&& move(T&& arg) noexcept
