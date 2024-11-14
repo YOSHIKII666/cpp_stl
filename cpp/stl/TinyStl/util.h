@@ -29,6 +29,14 @@ namespace mystl{
         static_assert(!std::is_lvalue_reference<T>::value,"bad forward");//保证接收到的参数是右值引用
         return static_cast<T&&>(arg);
     }
+
+    template<class T>
+    void swap(T& lhs,T& rhs) {
+        //右值传递赋值，节省空间
+        auto tmp(mystl::move(lhs));
+        lhs=mystl::move(rhs);
+        rhs=mystl::move(tmp);
+    }
 }
 
 #endif
