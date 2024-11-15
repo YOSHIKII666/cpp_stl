@@ -37,6 +37,102 @@ namespace mystl{
         lhs=mystl::move(rhs);
         rhs=mystl::move(tmp);
     }
+
+    //结构体模版：pair
+    //first和second分别表示取出来的数据
+    template<class Ty1,class Ty2>
+    struct pair {
+        typedef Ty1 first_type;
+        typedef Ty2 second_type;
+        first_type first;
+        second_type second;
+
+        //默认构造函数
+        template<class Other1=Ty1,class Other2=Ty2,typename = typename std::enable_if<std::is_default_constructible<Other1>::value&&std::is_default_constructible<Other2>::value,void>::type>
+        constexpr pair():first(),second(){}
+        //隐式构造函数
+        template <class U1 = Ty1, class U2 = Ty2,
+    typename std::enable_if<
+    std::is_copy_constructible<U1>::value &&
+    std::is_copy_constructible<U2>::value &&
+    std::is_convertible<const U1&, Ty1>::value &&
+    std::is_convertible<const U2&, Ty2>::value, int>::type = 0>
+    constexpr pair(const Ty1& a, const Ty2& b)
+    : first(a), second(b)
+        {
+        }
+        //显式构造函数
+        template<class U1=Ty1,class U2=Ty2,typename std::enable_if<std::is_copy_constructible<U1>::value&&std::is_copy_constructible<U2>::value&&(!std::is_convertible<const U1&,Ty1>::value||!std::is_convertible<const U2&,Ty2>::value),int>::type=0>
+        explicit constexpr pair(const Ty1& a,const Ty2& b):first(a),second(b){};
+
+        pair(const pair& rhs)=default;
+        pair(pair&& rhs)=default;
+
+        //其他类别的隐式构造函数，右值引用版本
+        template <class Other1, class Other2,
+           typename std::enable_if<
+           std::is_constructible<Ty1, Other1>::value &&
+           std::is_constructible<Ty2, Other2>::value &&
+           std::is_convertible<Other1&&, Ty1>::value &&
+           std::is_convertible<Other2&&, Ty2>::value, int>::type = 0>
+           constexpr pair(Other1&& a, Other2&& b)
+           : first(mystl::forward<Other1>(a)),
+           second(mystl::forward<Other2>(b))
+        {
+        }
+
+        // explicit constructiable for other type
+        template <class Other1, class Other2,
+          typename std::enable_if<
+          std::is_constructible<Ty1, Other1>::value &&
+          std::is_constructible<Ty2, Other2>::value &&
+          (!std::is_convertible<Other1, Ty1>::value ||
+           !std::is_convertible<Other2, Ty2>::value), int>::type = 0>
+          explicit constexpr pair(Other1&& a, Other2&& b)
+          : first(mystl::forward<Other1>(a)),
+          second(mystl::forward<Other2>(b))
+        {
+        }
+
+        //其他类别的隐式构造函数，左值引用版
+        template<class Other1 ,class Other2,typename std::enable_if<std::is_constructible<Ty1,const Other1&>::value&&std::is_constructible<Ty2,const Other2&>::value&&(!std::is_convertible<const Other1&,Ty1>||!std::is_convertible<const Other2,Ty2>),int>::type=0>
+        explicit constexpr pair(const pair<Other1,Other2>& other):first(other.first),second(other.second){};
+
+        template<class Other1,class Other2,typename std::enable_if<std::is_constructible<Ty1,Other1>::value&&std::is_convertible<Ty2,Other2>::value&&std::is_convertible<Other1,Ty1>::value&&std::is_convertible<Other2,Ty2>::value,int>::type=0>
+        constexpr pair(pair<Other1,Other2>&& other):first(mystl::forward<Other1>(other.first)),second(mystl::forward<Other2>(other.second)){};
+
+        template<class Other1,class Other2,typename std::enable_if<std::is_constructible<Ty1,Other1>::value&&std::is_constructible<Ty2,Other2>::value&&(!std::is_convertible<Other1,Ty1>::value||!std::is_convertible<Other2,Ty2>::Value),int>::type=0>
+        explicit constexpr pair(pair<Other1,Other2>&& other):first(mystl::forward<Other1>(other.first)),second(mystl::forward<Other2>(other.second)){}
+
+        pair& operator=(const pair& rhs) {
+            if(this!=&rhs) {
+                first=rhs.first;
+                second=rhs.second;
+            }
+            return *this;
+        }
+
+        template<class Other1 ,class Other2>
+        pair& operator=(const pair<Other1,Other2>& other) {
+            first=other.first;
+            second=other.second;
+            return *this;
+        }
+
+        template<class Other1,class Other2>
+        pair operator=(pair<Other1,Other2>&& other) {
+            first=mystl::forward<Other1>(other.first);
+            second=mystl::forward<Other2>(other.second);
+            return *this;
+        }
+        ~pair()=default;
+        void swap(pair& other) {
+            if(this!=&other) {
+                mystl::swap(first,other.first);
+                mystl::swap(second,other.second);
+            }
+        }
+    };
 }
 
 #endif
