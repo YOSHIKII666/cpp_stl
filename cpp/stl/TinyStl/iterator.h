@@ -35,7 +35,7 @@ struct has_iterator_cat
         {
             char a;
             char b;
-        }
+        };
         template<class U>
         static two test(...);
         template<class U>
@@ -209,8 +209,8 @@ class reverse_iterator{
     //构造函数
     public:
         reverse_iterator(){}
-        explicit reverse_iterator(iterator_type i):current(i);//explicit声明表示禁止隐式转换，只能显示声明构造函数构造对象
-        reverse_iterator(const self& rhs):current(rhs.current);
+        explicit reverse_iterator(iterator_type i):current(i){};//explicit声明表示禁止隐式转换，只能显示声明构造函数构造对象
+        reverse_iterator(const self& rhs):current(rhs.current){};
     
     public:
         //取出对应的正向迭代器
