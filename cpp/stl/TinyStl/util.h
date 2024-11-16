@@ -52,15 +52,15 @@ namespace mystl{
         constexpr pair():first(),second(){}
         //隐式构造函数
         template <class U1 = Ty1, class U2 = Ty2,
-    typename std::enable_if<
-    std::is_copy_constructible<U1>::value &&
-    std::is_copy_constructible<U2>::value &&
-    std::is_convertible<const U1&, Ty1>::value &&
-    std::is_convertible<const U2&, Ty2>::value, int>::type = 0>
-    constexpr pair(const Ty1& a, const Ty2& b)
-    : first(a), second(b)
-        {
-        }
+        typename std::enable_if<
+        std::is_copy_constructible<U1>::value &&
+        std::is_copy_constructible<U2>::value &&
+        std::is_convertible<const U1&, Ty1>::value &&
+        std::is_convertible<const U2&, Ty2>::value, int>::type = 0>
+        constexpr pair(const Ty1& a, const Ty2& b)
+        : first(a), second(b)
+            {
+            }
         //显式构造函数
         template<class U1=Ty1,class U2=Ty2,typename std::enable_if<std::is_copy_constructible<U1>::value&&std::is_copy_constructible<U2>::value&&(!std::is_convertible<const U1&,Ty1>::value||!std::is_convertible<const U2&,Ty2>::value),int>::type=0>
         explicit constexpr pair(const Ty1& a,const Ty2& b):first(a),second(b){};
