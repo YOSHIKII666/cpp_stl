@@ -25,7 +25,7 @@ namespace mystl {
         return comp(rhs,lhs)?rhs:lhs;
     }
 
-    //两个迭代器所指向的对象对�?
+    //两个迭代器所指向的对象对�?
     template<class Iter1,class Iter2>
     void iter_swap(Iter1 lhs,Iter2 rhs) {
         mystl::swap(*lhs,*rhs);
@@ -54,17 +54,17 @@ namespace mystl {
     }
 
     template<class Tp,class Up>
-    //只有当经�? std::remove_const 处理后的 Tp 类型�? Up 类型相同�?
+    //只有当经�? std::remove_const 处理后的 Tp 类型�? Up 类型相同�?
     //并且 Up 类型是可以平凡赋值的情况下，平凡赋值表示这个类中没有重载运算符
-    //这个 std::enable_if 结构才会定义出类型为 Up*（指�? Up 类型的指针）
-    //�? type，否则（如果条件不满足），这�? type 就不存在
+    //这个 std::enable_if 结构才会定义出类型为 Up*（指�? Up 类型的指针）
+    //�? type，否则（如果条件不满足），这�? type 就不存在
     typename std::enable_if<std::is_same<typename std::remove_const<Tp>::type,Up>::value &&
         std::is_trivially_move_assignable<Up>::value,Up*>::type
     unchecked_copy(Tp* first,Tp* last,Up* result) {
         const auto n = static_cast<size_t>(last - first);
         if(n!=0) {
             //std::memmove(void* dest,const void* src,size_t count)
-            //�? count 个字节的数据�? src 所指向的内存区域复制到 dest 所指向的内存区域�?
+            //�? count 个字节的数据�? src 所指向的内存区域复制到 dest 所指向的内存区域�?
             std::memmove(result,first,n*sizeof(Up));
         }
         return result+n;
@@ -78,7 +78,7 @@ namespace mystl {
     template<class BidirectionalIter1,class BidirectionalIter2>
     BidirectionalIter2 unchecked_copy_backward_cat(BidirectionalIter1 first,BidirectionalIter1 last,BidirectionalIter2 result,mystl::bidirectional_iterator_tag) {
         while(first!=last) {
-            *(--last)=*(--result);
+            *(--result)=*(--last);
         }
         return result;
     }
@@ -111,7 +111,7 @@ namespace mystl {
         return unchecked_copy_backward(first,last,result);
     }
 
-    //copy_if,把[first,last)中满足UnaryPredicate关系的元素拷贝到result为起点的位置�?
+    //copy_if,把[first,last)中满足UnaryPredicate关系的元素拷贝到result为起点的位置�?
     template<class InputIter,class OutputIter,class UnaryPredicate>
     OutputIter copy_if(InputIter first,InputIter last,OutputIter result,UnaryPredicate unary_pred) {
         for(;first!=last;++first) {
@@ -142,7 +142,7 @@ namespace mystl {
         return unchecked_copy_n(first,n,iterator_category(first));
     }
 
-    //move,把[first,last)区间内元素移动到[result,result+(last-first))�?
+    //move,把[first,last)区间内元素移动到[result,result+(last-first))�?
     template<class InputIter,class OutputIter>
     OutputIter unchecked_move_cat(InputIter first,InputIter last,OutputIter result,mystl::input_iterator_tag) {
         for (;first!=last;++first,++result) {
@@ -184,7 +184,7 @@ namespace mystl {
         return unchecked_move(first,last,result);
     }
 
-    //move_backward,将[first,last)区间内元素移动到[result-(last-first),result]区间�?
+    //move_backward,将[first,last)区间内元素移动到[result-(last-first),result]区间�?
     template<class BidirectionalIter1,class BidirectionalIter2>
     BidirectionalIter2 unchecked_move_backward_cat(BidirectionalIter1 first,BidirectionalIter1 last,BidirectionalIter2 result,mystl::bidirectional_iterator_tag) {
         while(first!=last) {
@@ -244,7 +244,7 @@ namespace mystl {
         return true;
     }
 
-    //从first 位置开始填充n个位�?
+    //从first 位置开始填充n个位�?
     template<class OutputIter,class Size,class T>
     OutputIter unchecked_fill_n(OutputIter first,Size n,const T& value) {
         for(;n>0;--n,++first) {
@@ -253,7 +253,7 @@ namespace mystl {
         return first;
     }
 
-    //为one-byte类型提供的版�?
+    //为one-byte类型提供的版�?
     template <class Tp,class Size,class Up>
     typename std::enable_if<std::is_integral<Tp>::value && sizeof(Tp)==1 &&
         !std::is_same<Tp,bool>::value&&
@@ -270,7 +270,7 @@ namespace mystl {
         return unchecked_fill_n(first,n,value);
     }
 
-    //fill,为[first,last)区间中所有的元素填充新�?
+    //fill,为[first,last)区间中所有的元素填充新�?
     template<class ForwardIter,class T>
     void fill_cat(ForwardIter first,ForwardIter last,const T& value,mystl::forward_iterator_tag) {
         for(;first!=last;++first) {
@@ -288,7 +288,7 @@ namespace mystl {
         fill_cat(first,last,value,iterator_category(first));
     }
 
-    //lexicographical_compare,以字典序对两个序列进行比�?
+    //lexicographical_compare,以字典序对两个序列进行比�?
     template <class InputIter1,class InputIter2>
     bool lexicographical_compare(InputIter1 first1,InputIter1 last1, InputIter2 first2,InputIter2 last2) {
         for(;first1!=last1&&first2!=last2;++first1,++first2) {
@@ -316,7 +316,7 @@ namespace mystl {
         return first1==last1&&first2!=last2;
     }
 
-    //实现const unsigned char*的版�?
+    //实现const unsigned char*的版�?
     bool lexicographical_compare(const unsigned char* first1,const unsigned char* last1,const unsigned char* first2,const unsigned char* last2) {
         const auto len1=last1-first1;
         const auto len2=last2-first2;
@@ -324,7 +324,7 @@ namespace mystl {
         return result!=0?result<0:len1<len2;
     }
 
-    //mismatch ，比较两个序列，返回第一处不匹配的元�?
+    //mismatch ，比较两个序列，返回第一处不匹配的元�?
     template<class InputIter1,class InputIter2>
     mystl::pair<InputIter1,InputIter2> mismatch(InputIter1 first1,InputIter1 last1,InputIter2 first2) {
         while(first1!=last1&&*first1==*first2) {
@@ -333,7 +333,7 @@ namespace mystl {
         }
         return mystl::pair<InputIter1,InputIter2>(first1,first2);
     }
-    //重载使用自定义的比较�?
+    //重载使用自定义的比较�?
     template<class InputIter1,class InputIter2,class Compare>
     mystl::pair<InputIter1,InputIter2> mismatch(InputIter1 first1,InputIter1 last1,InputIter2 first2,Compare comp) {
         while(first1!=last1&&comp(*first1,*first2)) {
