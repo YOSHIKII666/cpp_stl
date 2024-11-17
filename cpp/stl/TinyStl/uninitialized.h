@@ -113,7 +113,7 @@ namespace mystl {
 
     template<class ForwardIter,class Size,class T>
     ForwardIter uninitialized_fill_n(ForwardIter first,Size n,const T& value) {
-        return mystl::uninitialized_fill_n(std::is_trivially_copy_assignable<typename iterator_traits<ForwardIter>::value_type>{});
+        return mystl::unchecked_uninit_fill_n(std::is_trivially_copy_assignable<typename iterator_traits<ForwardIter>::value_type>{});
     }
 
     //move,把[first,last)上的内容移动到result起始的空间处
