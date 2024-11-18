@@ -203,7 +203,7 @@ namespace mystl {
 
     template<class BidirectionalIter1,class BidirectionalIter2>
     BidirectionalIter2 unchecked_move_backward(BidirectionalIter1 first,BidirectionalIter1 last,BidirectionalIter2 result) {
-        return unchecked_move_backward(first,last,result,iterator_category(first));
+        return unchecked_move_backward_cat(first,last,result,iterator_category(first));
     }
 
     template<class Tp,class Up>
