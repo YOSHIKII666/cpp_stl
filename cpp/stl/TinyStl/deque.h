@@ -20,6 +20,7 @@
 //   * insert
 
 #include <initializer_list>
+#include <iterator>
 #include <utility>
 
 #include "iterator.h"
@@ -222,10 +223,10 @@ namespace {
            end_(mystl::move(rhs.end_)),
            map_(rhs.map_),
            map_size_(rhs.map_size_)
-         {
-           rhs.map_ = nullptr;
-           rhs.map_size_ = 0;
-         }
+        {
+            rhs.map_ = nullptr;
+            rhs.map_size_ = 0;
+        }
 
         deque& operator=(const deque& rhs);
         deque& operator=(deque&& rhs);
@@ -324,77 +325,77 @@ namespace {
         template<class ...Args>
         iterator emplace(iterator pos,Args&& ...args);
 
-         // push_front / push_back
+        // push_front / push_back
 
-      void     push_front(const value_type& value);
-      void     push_back(const value_type& value);
+        void     push_front(const value_type& value);
+        void     push_back(const value_type& value);
 
-      void     push_front(value_type&& value) { emplace_front(mystl::move(value)); }
-      void     push_back(value_type&& value)  { emplace_back(mystl::move(value)); }
+        void     push_front(value_type&& value) { emplace_front(mystl::move(value)); }
+        void     push_back(value_type&& value)  { emplace_back(mystl::move(value)); }
 
-      // pop_back / pop_front
+        // pop_back / pop_front
 
-      void     pop_front();
-      void     pop_back();
+        void     pop_front();
+        void     pop_back();
 
-      // insert
+        // insert
 
-      iterator insert(iterator position, const value_type& value);
-      iterator insert(iterator position, value_type&& value);
-      void     insert(iterator position, size_type n, const value_type& value);
-      template <class IIter, typename std::enable_if<
-        mystl::is_input_iterator<IIter>::value, int>::type = 0>
-      void     insert(iterator position, IIter first, IIter last)
-      { insert_dispatch(position, first, last, iterator_category(first)); }
+        iterator insert(iterator position, const value_type& value);
+        iterator insert(iterator position, value_type&& value);
+        void     insert(iterator position, size_type n, const value_type& value);
+        template <class IIter, typename std::enable_if<
+          mystl::is_input_iterator<IIter>::value, int>::type = 0>
+        void     insert(iterator position, IIter first, IIter last)
+        { insert_dispatch(position, first, last, iterator_category(first)); }
 
-      // erase /clear
+        // erase /clear
 
-      iterator erase(iterator position);
-      iterator erase(iterator first, iterator last);
-      void     clear();
+        iterator erase(iterator position);
+        iterator erase(iterator first, iterator last);
+        void     clear();
 
-      // swap
+        // swap
 
-      void     swap(deque& rhs) noexcept;
+        void     swap(deque& rhs) noexcept;
 
     private:
-      // helper functions
+        // helper functions
 
-      // create node / destroy node
-      map_pointer create_map(size_type size);
-      void        create_buffer(map_pointer nstart, map_pointer nfinish);
-      void        destroy_buffer(map_pointer nstart, map_pointer nfinish);
+        // create node / destroy node
+        map_pointer create_map(size_type size);
+        void        create_buffer(map_pointer nstart, map_pointer nfinish);
+        void        destroy_buffer(map_pointer nstart, map_pointer nfinish);
 
-      // initialize
-      void        map_init(size_type nelem);
-      void        fill_init(size_type n, const value_type& value);
-      template <class IIter>
-      void        copy_init(IIter, IIter, input_iterator_tag);
-      template <class FIter>
-      void        copy_init(FIter, FIter, forward_iterator_tag);
+        // initialize
+        void        map_init(size_type nelem);
+        void        fill_init(size_type n, const value_type& value);
+        template <class IIter>
+        void        copy_init(IIter, IIter, input_iterator_tag);
+        template <class FIter>
+        void        copy_init(FIter, FIter, forward_iterator_tag);
 
-      // assign
-      void        fill_assign(size_type n, const value_type& value);
-      template <class IIter>
-      void        copy_assign(IIter first, IIter last, input_iterator_tag);
-      template <class FIter>
-      void        copy_assign(FIter first, FIter last, forward_iterator_tag);
+        // assign
+        void        fill_assign(size_type n, const value_type& value);
+        template <class IIter>
+        void        copy_assign(IIter first, IIter last, input_iterator_tag);
+        template <class FIter>
+        void        copy_assign(FIter first, FIter last, forward_iterator_tag);
 
-      // insert
-      template <class... Args>
-      iterator    insert_aux(iterator position, Args&& ...args);
-      void        fill_insert(iterator position, size_type n, const value_type& x);
-      template <class FIter>
-      void        copy_insert(iterator, FIter, FIter, size_type);
-      template <class IIter>
-      void        insert_dispatch(iterator, IIter, IIter, input_iterator_tag);
-      template <class FIter>
-      void        insert_dispatch(iterator, FIter, FIter, forward_iterator_tag);
+        // insert
+        template <class... Args>
+        iterator    insert_aux(iterator position, Args&& ...args);
+        void        fill_insert(iterator position, size_type n, const value_type& x);
+        template <class FIter>
+        void        copy_insert(iterator, FIter, FIter, size_type);
+        template <class IIter>
+        void        insert_dispatch(iterator, IIter, IIter, input_iterator_tag);
+        template <class FIter>
+        void        insert_dispatch(iterator, FIter, FIter, forward_iterator_tag);
 
-      // reallocate
-      void        require_capacity(size_type n, bool front);
-      void        reallocate_map_at_front(size_type need);
-      void        reallocate_map_at_back(size_type need);
+        // reallocate
+        void        require_capacity(size_type n, bool front);
+        void        reallocate_map_at_front(size_type need);
+        void        reallocate_map_at_back(size_type need);
     };
     //A=rhs
     template<class T>
@@ -573,9 +574,275 @@ namespace {
             return insert_aux(position,value);
         }
     }
+    template<class T>
+    typename deque<T>::iterator deque<T>::insert(iterator position,value_type&& value) {
+        if(position.cur=begin_.cur) {
+            emplace_front(mystl::move(value));
+            return begin_;
+        }else if(position.cur==end_.cur) {
+            emplace_back(mystl::move(value));
+            auto temp=end_;
+            --tmp;
+            return tmp;
+        }else {
+            return insert_aux(position,mystl::move(value));
+        }
+    }
+
+    //在position位置插入n个元素
+    template<class T>
+    void deque<T>::insert(iterator position,size_type n,const value_type& value) {
+        if(position.cur==begin_.cur) {
+            require_capacity(n,true);
+            auto new_begin=begin_-n;
+            mystl::uninitialized_fill_n(new_begin,n,value);
+            begin_=new_begin;
+        }
+        else if(position.cur==end_.cur) {
+            require_capacity(n,false);
+            auto new_end=end_+n;
+            mystl::uninitialized_fill_n(end_,n,value);
+            end_=new_end;
+        }else {
+            fill_insert(position,n,value);
+        }
+    }
+
+    //删除position处的元素
+    template<class T>
+    typename deque<T>::iterator deque<T>::erase(iterator position) {
+        auto next=position;
+        ++next;
+        const size_type elems_before=position-begin_;
+        if(elems_before<(size()/2)) {
+            mystl::copy_backward(begin_,position,next);//--position=--next
+            pop_front();
+        }else {
+            mystl::copy(next,end_,position);
+            pop_back();
+        }
+        return begin_+elems_before;
+    }
+
+    //删除[first,last)中的元素
+    template<class T>
+    typename deque<T>::iterator deque<T>::erase(iterator first,iterator last) {
+        if(first==begin_&&last==end_) {
+            clear();
+            return end_;
+        }
+        else {
+            const size_type len=last-first;
+            const size_type elems_before=first-begin_;
+            if(elems_before<((size()-len)/2)) {
+                mystl::copy_backward(begin_,first,last);
+                auto new_begin=begin_+len;
+                data_allocator::destroy(begin_.cur,new_begin.cur);
+                begin_=new_begin;
+            }else {
+                mystl::copy(last,end_,first);
+                auto new_end=end_-len;
+                data_allocator::destroy(new_end.cur,end_.cur);
+                end_=new_end;
+            }
+        }
+    }
+    template<class T>
+    void deque<T>::clear() {
+        for(map_pointer cur=begin_.node+1;cur<end_.node;++cur) {
+            data_allocator::destroy(*cur,*cur+buffer_size);
+        }
+        if(begin_.node!=end_.node) {
+            //有两个以上的缓冲区
+            mystl::destroy(begin_.cur,begin_.last);
+            mystl::destroy(end_.first,end_.cur);
+        }else {
+            mystl::destroy(begin_.cur,end_.cur);
+        }
+        shrink_to_fit();
+        end_=begin_;
+    }
+
+    template<class T>
+    void deque<T>::swap(deque& rhs) noexcept {
+        mystl::swap(begin_, rhs.begin_);
+        mystl::swap(end_, rhs.end_);
+        mystl::swap(map_, rhs.map_);
+        mystl::swap(map_size_, rhs.map_size_);
+    }
+
+    template<class T>
+    typename deque<T>::map_pointer deque<T>::create_map(size_type size) {
+        map_pointer mp=nullptr;
+        mp=map_allocator::allocate(size);
+        for(size_type i=0;i<size;++i) {
+            *(mp+i)=nullptr;
+        }
+        return mp;
+    }
+
+    template<class T>
+    void deque<T>::create_buffer(map_pointer nstart,map_pointer nfinish) {
+        map_pointer cur;
+        try {
+            for(cur=nstart;cur<=nfinish;++cur) {
+                *cur=data_allocator::allocate(buffer_size);//申请数组空间
+            }
+        }catch (...) {
+            while(cur!=nstart) {
+                --cur;
+                data_allocator::deallocate(*cur,buffer_size);
+                *cur=nullptr;
+            }
+            throw;
+        }
+    }
+
+    template<class T>
+    void deque<T>::destroy_buffer(map_pointer nstart,map_pointer nfinish) {
+        for(map_pointer n=nstart;n<=nfinish;++n) {
+            data_allocator::deallocate(*n,buffer_size);
+            *n=nullptr;
+        }
+    }
+
+    template<class T>
+    void deque<T>::map_init(size_type nElem) {
+        const size_type nNode=nElem/buffer_size+1;//需要分配的缓冲区个数
+        map_size_=mystl::max(static_cast<size_type>(DEQUE_MAP_INIT_SIZE),nNode+2);
+        try {
+            map_=create_map(map_size_);
+        }catch(...) {
+            map_=nullptr;
+            map_size_=0;
+            throw;
+        }
+
+        map_pointer nstart=map_+(map_size_-nNode)/2;
+        map_pointer nfinish=nstart+nNode-1;
+        try {
+            create_buffer(nstart,nfinish);
+        }catch (...) {
+            map_allocator::deallocate(map_,map_size_);
+            map_=nullptr;
+            map_size_=0;
+            throw;
+        }
+        begin_.set_node(nstart);
+        end_.set_node(nfinish);
+        begin_.cur=begin_.first;
+        end_.cur=end.first+(nElem%buffer_size);
+    }
+
+    template<class T>
+    void deque<T>::fill_init(size_type n,const value_type& value) {
+        map_init(n);
+        if(n!=0) {
+            for(auto cur=begin_.node;cur<end_.node;++cur) {
+                mystl::uninitialized_fill(*cur,*cur+buffer_size,value);
+            }
+            mystl::uninitialized_fill(end_.first,end_.cur,value);
+        }
+    }
+
+    template<class T>
+    template<class IIter>
+    void deque<T>::copy_init(IIter first,IIter last,mystl::input_iterator_tag) {
+        const size_type n=mystl::distance(first,last);
+        map_init(n);
+        for(;first!=last;++first) {
+            emplace_back(*first);
+        }
+    }
+
+    //把[first,last]中的内容复制过来
+    template<class T>
+    template<class FIter>
+    void deque<T>::copy_init(FIter first,FIter last,mystl::forward_iterator_tag) {
+        const size_type n=mystl::distance(first,last);
+        map_init(n);
+        for(auto cur=begin_.node;cur<end_.node;++cur) {
+            auto next=first;
+            mystl::advance(next,buffer_size);
+            mystl::uninitialized_copy(first,next,*cur);
+            first=next;
+        }
+        mystl::uninitialized_copy(first,last,end_.first);
+    }
+
+    template<class T>
+    void deque<T>:: fill_assign(size_type n,const value_type& value) {
+        if(n>size()) {
+            mystl::fill(begin(),end(),value);
+            insert(end(),n-size(),value);
+        }else {
+            erase(begin()+n,end());
+            mystl::fill(begin(),end(),value);
+        }
+    }
+
+    //将first和last这部分内容复制到当前调用的deque
+    //input型迭代器
+    template<class T>
+    template<class IIter>
+    void deque<T>::copy_assign(IIter first,IIter last,mystl::input_iterator_tag) {
+        auto first1=begin();
+        auto last1=end();
+        for(;first!=last&&first1!=last1;++first,++first1) {
+            *first1=*first;
+        }
+        if(first1!=last1) {
+            erase(first1,last1);//清除掉多余的这部分
+        }
+        else {
+            insert_dispatch(end_,first,last,mystl::input_iterator_tag{});
+        }
+    }
+
+    //forward型迭代器
+    template<class T>
+    template<class FIter>
+    void deque<T>::copy_assign(FIter first,FIter last,mystl::forward_iterator_tag) {
+        const size_type len1=size();
+        const size_type len2=mystl::distance(first,last);
+        if(len1<len2) {
+            auto next=first;
+            mystl::advance(next,len1);
+            mystl::copy(first,next,begin_);//先把原deque撑满
+            insert_dispatch(end_,next,last,mystl::forward_iterator_tag{});
+        }else {
+            erase(mystl::copy(first,last,begin_),end_);
+        }
+    }
+
+    template<class T>
+    template<class... Args>
+    typename deque<T>::iterator deque<T>::insert_aux(iterator position,Args&& ...args) {
+        const size_type elems_before=position-begin_;
+        value_type value_copy=value_type(mystl::forward<Args>(args)...);
+        if(elems_before<(size()/2)){//在前半段插入
+            emplace_front(front());
+            auto front1=begin_;
+            ++front1;
+            auto front2=front1;
+            ++front2;
+            position =begin_+elems_before;
+            auto pos=position;
+            ++pos;
+            mystl::copy(front2,pos,front1);
+        }else {
+            emplace_back(back());
+            auto end1=end_;
+            --end1;
+            auto end2=end1;
+            --end2;
+            position=begin_+elems_before;
+            mystl::copy_backward(pos,end2,end1);
+        }
+        *position=mystl::move(value_copy);
+        return position;
+    }
 }
-
-
 
 
 
