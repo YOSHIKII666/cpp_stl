@@ -208,7 +208,7 @@ namespace {
         deque(size_type n,const value_type& value){fill_init(n,value);}
 
         template<class IIter,typename std::enable_if<mystl::is_input_iterator<IIter>::value,int>::type=0>
-        deque(IIter first,IIter,last){copy(first,last,mystl::iterator_category(first));}
+        deque(IIter first,IIter,last){copy_init(first,last,mystl::iterator_category(first));}
 
         deque(std::initializer_list<value_type> ilist) {
             copy_init(ilist.begin(),ilist.end(),mystl::forward_iterator_tag());
