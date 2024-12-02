@@ -17,4 +17,8 @@ add_executable(cpp_stl
         cpp/stl/TinyStl/vector.h
         cpp/stl/TinyStl/heap_algo.h
         cpp/stl/TinyStl/deque.h
+        cpp/stl/TinyStl/functional.h
+        cpp/stl/TinyStl/queue.h
+        cpp/stl/TinyStl/stack.h
+        cpp/stl/TinyStl/basic_string.h
 )
