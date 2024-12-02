@@ -300,7 +300,7 @@ struct char_traits<char32_t>
           public:
             basic_string() noexcept{try_init();}
 
-            basic_string(size_type n,value_type ch):buffer_(nullptr),size_(0),cap_(0){init_from(n,ch)};            
+            basic_string(size_type n,value_type ch):buffer_(nullptr),size_(0),cap_(0){init_from(n,ch);}
 
             basic_string(const basic_string& other,size_type pos):buffer_(nullptr),size_(0),cap_(0){
                 init_from(other.buffer_,pos,other.pos-pos);
@@ -735,7 +735,7 @@ struct char_traits<char32_t>
 
     template<class CharType,class CharTraits>
     typename basic_string<CharType,CharTraits>::iterator basic_string<CharType,CharTraits>::insert(const_iterator pos,size_type count,value_type ch){
-        iterator r=static_assert<iterator>(pos);
+        iterator r=static_cast<iterator>(pos);
         if(count==0) return r;
         if(cap_-size_<count){
           return reallocate_and_fill(r,n,ch);
@@ -837,5 +837,129 @@ struct char_traits<char32_t>
         }
     }
 
+    template<class CharType, class CharTraits>
+    int basic_string<CharType, CharTraits>::compare(basic_string& other) const {
+            return compare_cstr(buffer_,size_,other.buffer_,other.size_);
+    }
+
+    template<class CharType, class CharTraits>
+    int basic_string<CharType, CharTraits>::compare(size_type pos1, size_type count1, const basic_string& other) const {
+        auto n1=mystl::min(count1,size_-pos1);
+        return compare_cstr(buffer_+pos1,n1,other.buffer_,other.size_);
+    }
+
+    //this的[pos1,pos1+count1]和other的[pos2,pos2+count2]进行比较
+    template<class CharType,class CharTraits>
+    int basic_string<CharType,CharTraits>::compare(size_type pos1,size_type count1,const basic_string& other,size_type pos2,size_type count2) const {
+        auto n1=mystl::min(size_-pos1,count1);
+        auto n2=mystl::min(other.size_-pos2,count2);
+        return compare_cstr(buffer_+pos1,n1,other.buffer_+pos2,n2);
+    }
+
+    template<class CharType,class CharTraits>
+    int basic_string<CharType,CharTraits>::compare(const_pointer s) const {
+        auto len=char_traits::length(s);
+        return compare_cstr(buffer_,size_,s,len);
+    }
+
+    template<class CharType,class CharTraits>
+    int basic_string<CharType,CharTraits>::compare(size_type pos1,size_type count1,const_pointer s) const {
+        auto n1=mystl::min(count1,size_-pos1);
+        auto n2=char_traits::length(s);
+        return compare_cstr(buffer_,n1,s,n2);
+    }
+
+    // 从下标 pos1 开始的 count1 个字符跟另一个字符串的前 count2 个字符比较
+    template <class CharType, class CharTraits>
+    int basic_string<CharType, CharTraits>::
+    compare(size_type pos1, size_type count1, const_pointer s, size_type count2) const
+    {
+        auto n1 = mystl::min(count1, size_ - pos1);
+        return compare_cstr(buffer_, n1, s, count2);
+    }
+
+    template<class CharType, class CharTraits>
+    void basic_string<CharType, CharTraits>::reverse() noexcept {
+        for(auto i=begin(),j=end();i<j;) {
+            mystl::iter_swap(i++,--j);
+        }
+    }
+
+    template<class CharType, class CharTraits>
+    void basic_string<CharType, CharTraits>::swap(basic_string &rhs) noexcept {
+        if(this!=&rhs) {
+            mystl::swap(buffer_,rhs.buffer_);
+            mystl::swap(size_,rhs.size_);
+            mystl::swap(cap_,rhs.cap_);
+        }
+    }
+
+    //查找字符
+    template<class CharType,class CharTraits>
+    typename basic_string<CharType,CharTraits>::size_type basic_string<CharType,CharTraits>::find(value_type ch,size_type pos) const noexcept {
+        for(auto i=pos;i<size_;++i) {
+            if(*(buffer_+i)==ch) return i;
+        }
+        return npos;//最大值，表示没找到
+    }
+
+    //从pos开始查找字符串str,若找到则返回起始下标
+    //bp算法
+    template<class CharType,class CharTraits>
+    typename basic_string<CharType,CharTraits>::size_type
+    basic_string<CharType,CharTraits>::find(const_pointer str,size_type pos) const noexcept {
+        const auto len=char_traits::length(str);
+        if(len==0) return pos;
+        if(size_-pos<len) return npos;
+        const auto left=size_-len;
+        for(auto i=pos;i<=left;++i) {
+            if(*(buffer_+i)==*str) {
+                size_type j=1;
+                for(;j<len;++j) {
+                    if(*(buffer_+i+j)!=*(str+j)) break;
+                }
+                if(j==len) return i;
+            }
+        }
+        return npos;
+    }
+
+    //从pos开始查找str的前count个字符
+    template<class CharType,class CharTraits>
+    typename basic_string<CharType,CharTraits>::size_type
+    basic_string<CharType,CharTraits>::find(const_pointer str,size_type pos,size_type count) const noexcept {
+        if(count==0) return pos;
+        if(size_<pos+count) return npos;
+        const auto left=size_-count;
+        for(int i=pos;i<=left;++i) {
+            if(*(buffer_+i)==*str) {
+                size_type j=1;
+                for(;j<count;++j) {
+                    if(*(buffer_+i+j)!=*(str+j)) break;
+                }
+                if(j==count) return i;
+            }
+        }
+        return npos;
+    }
+
+    template<class CharType,class CharTraits>
+    typename basic_string<CharType,CharTraits>::size_type
+    basic_string<CharType,CharTraits>::find(const basic_string& str,size_type pos) const noexcept {
+        const size_type len =str.size_;
+        if(len==0) return pos;
+        if(pos+len>size_) return npos;
+        const auto left=size_-len;
+        for(auto i=pos;i<=left;++i) {
+            if(*(buffer_+i)==str.front()) {
+                size_type j=1;
+                for(;j<len;++j) {
+                    if(*(buffer_+i+j)!=str[j]) break;
+                }
+                if(j==len) return i;
+            }
+        }
+        return npos;
+    }
 }
 #endif
