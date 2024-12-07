@@ -210,8 +210,510 @@ namespace mystl
         typedef mystl::allocator<list_node<T>>  node_allocator;
 
         typedef typename allocator_type::value_type value_type;
+        typedef typename allocator_type::pointer pointer;
+        typedef typename allocator_type::const_pointer const_pointer;
+        typedef typename allocator_type::reference reference;
+        typedef typename allocator_type::const_reference const_reference;
+        typedef typename allocator_type::size_type size_type;
+        typedef typename allocator_type::difference_type difference_type;
+
+        typedef list_iterator<T> iterator;
+        typedef list_const_iterator<T> const_iterator;
+        typedef mystl::reverse_iterator<iterator> reverse_iterator;
+        typedef mystl::reverse_iterator<const_iterator> const_reverse_iterator;
+
+        typedef typename node_traits<T>::base_ptr base_ptr;
+        typedef typename node_traits<T>::node_ptr node_ptr;
+
+        allocator_type get_allocator(){
+            return node_allocator();
+        }
+
+        private:
+            base_ptr node_;//指向dummy_node
+            size_type size_;
+        public:
+            list(){
+                fill_init(0,value_type()); //value_type()即为T的构造函数
+            }
+
+            explicit list(size_type n){
+                fill_init(n,value_type());
+            }
+
+            list(size_type n,const T& value){
+                fill_init(n,value);
+            }
+
+            template<class Iter,typename std::enable_if<mystl::is_input_iterator<Iter>::value,int>::type=0>
+            list(Iter first,Iter last){
+                copy_init(first,last);
+            }
+
+            list(std::initializer_list<T> ilist){
+                copy_init(ilist.begin(),ilist.end());
+            }
+
+            list(const list& rhs){
+                copy_init(rhs.cbegin(),rhs.cend());
+            }
+
+            list(list&& rhs) noexcept:node_(rhs.node_),size_(rhs.size_){
+                rhs.node_=nullptr;
+                rhs.size_=0;
+            }
+
+            list& operator=(const list& rhs){
+                if(this!=&rhs){
+                    assign(rhs.begin(),rhs.end());
+                }
+                return *this;
+            }
+
+            list& operator= (list&& rhs) noexcept{
+                clear();
+                splice(end(),rhs);
+                return *this;
+            }
+            
+            list& operator=(std::initializer_list<T> ilist)
+            {
+                list tmp(ilist.begin(), ilist.end());
+                swap(tmp);
+                return *this;
+            }
+
+            ~list()
+            {
+                if (node_)
+                {
+                    clear();
+                    base_allocator::deallocate(node_);
+                    node_ = nullptr;
+                    size_ = 0;
+                }
+            }
+        public:
+            iterator begin() noexcept{
+                return node_->next;//dummy_node->next
+            }
+
+            const_iterator begin() const noexcept{
+                return node_->next;
+            }
+
+            iterator end() noexcept{
+                return node_;
+            } 
+
+            const_iterator end() const noexcept{
+                return node_;
+            }
+
+            reverse_iterator  rbegin() noexcept{
+                return reverse_iterator(end());
+            }
+
+            const_reverse_iterator  rbegin() const noexcept{
+                return reverse_iterator(end());
+            }
+
+            reverse_iterator  rend() noexcept{
+                return reverse_iterator(begin());
+            }
+
+            const_reverse_iterator  rend() const noexcept{
+                return reverse_iterator(begin());
+            }
+
+            const_iterator cbegin() const noexcept{
+                return begin();
+            }
+            const_iterator cend() const noexcept{
+                return end();
+            }
+            const_reverse_iterator crbegin() const noexcept{
+                return rbegin();
+            }
+             const_reverse_iterator crend() const noexcept{
+                return rend();
+            }
+
+            bool empty() const noexcept{
+                return node->next==node_;
+            }
+
+            size_type size() const noexcept{
+                return size_;
+            }
+
+            size_type max_size() const noexcept{
+                return static_cast<size_type>(-1);
+            }
+
+            reference front(){
+                MYSTL_DEBUG(!empty());
+                return *begin();//begin的定义是node_->next
+            }
+
+            const_reference front() const{
+                MYSTL_DEBUG(!empty());
+                return *begin();
+            }
+            
+             reference back(){
+                MYSTL_DEBUG(!empty());
+                return *(--end());//begin的定义是node_->next
+            }
+
+            const_reference back() const{
+                MYSTL_DEBUG(!empty());
+                return *(--end());
+            }
+
+         void     assign(size_type n, const value_type& value) 
+            { 
+                fill_assign(n, value); 
+            }
+
+        template <class Iter, typename std::enable_if<
+            mystl::is_input_iterator<Iter>::value, int>::type = 0>
+        void     assign(Iter first, Iter last)
+        { 
+            copy_assign(first, last);
+        }
+
+        void     assign(std::initializer_list<T> ilist)
+        { 
+            copy_assign(ilist.begin(), ilist.end()); 
+        }
+        
+        template<class ...Args>
+        void emplace_front(Args&& ...args){
+            THROW_LENGTH_ERROR_IF(size_>max_size()-1,"too big");
+            auto link_node=creatr_node(mystl::forward<Args>(args)...);
+            link_nodes_at_front(link_node->as_base(),link_node->as_base);
+            ++size_;
+        }
+
+        template <class ...Args>
+        void     emplace_back(Args&& ...args)
+        {
+            THROW_LENGTH_ERROR_IF(size_ > max_size() - 1, "list<T>'s size too big");
+            auto link_node = create_node(mystl::forward<Args>(args)...);
+            link_nodes_at_back(link_node->as_base(), link_node->as_base());
+            ++size_;
+        }
+
+        template <class ...Args>
+        iterator emplace(const_iterator pos, Args&& ...args)
+        {
+            THROW_LENGTH_ERROR_IF(size_ > max_size() - 1, "list<T>'s size too big");
+            auto link_node = create_node(mystl::forward<Args>(args)...);
+            link_nodes(pos.node_, link_node->as_base(), link_node->as_base());
+            ++size_;
+            return iterator(link_node);
+        }
+
+        iterator insert(const_iterator pos,const value_type& value){
+            THROW_LENGTH_ERROR_IF(size_>max_size()-1,"too big");
+            auto link_node=create_node(mystl::move(value));
+            ++size_;
+            return link_iter_node(pos,link_node->as_base());
+        }
+
+         iterator insert(const_iterator pos, size_type n, const value_type& value)
+        { 
+            THROW_LENGTH_ERROR_IF(size_ > max_size() - n, "list<T>'s size too big");
+            return fill_insert(pos, n, value); 
+        }
+
+        template <class Iter, typename std::enable_if<
+            mystl::is_input_iterator<Iter>::value, int>::type = 0>
+        iterator insert(const_iterator pos, Iter first, Iter last)
+        { 
+            size_type n = mystl::distance(first, last);
+            THROW_LENGTH_ERROR_IF(size_ > max_size() - n, "list<T>'s size too big");
+            return copy_insert(pos, n, first); 
+        }
+
+        // push_front / push_back
+
+        void push_front(const value_type& value)
+        {
+            THROW_LENGTH_ERROR_IF(size_ > max_size() - 1, "list<T>'s size too big");
+            auto link_node = create_node(value);
+            link_nodes_at_front(link_node->as_base(), link_node->as_base());
+            ++size_;
+        }
+
+        void push_front(value_type&& value)
+        {
+            emplace_front(mystl::move(value));
+        }
+
+        void push_back(const value_type& value)
+        {
+            THROW_LENGTH_ERROR_IF(size_ > max_size() - 1, "list<T>'s size too big");
+            auto link_node = create_node(value);
+            link_nodes_at_back(link_node->as_base(), link_node->as_base());
+            ++size_;
+        }
+
+        void push_back(value_type&& value)
+        {
+            emplace_back(mystl::move(value));
+        }
+
+        // pop_front / pop_back
+
+        void pop_front() 
+        {
+            MYSTL_DEBUG(!empty());
+            auto n = node_->next;
+            unlink_nodes(n, n);
+            destroy_node(n->as_node());
+            --size_;
+        }
+
+        void pop_back() 
+        { 
+            MYSTL_DEBUG(!empty());
+            auto n = node_->prev;
+            unlink_nodes(n, n);
+            destroy_node(n->as_node());
+            --size_;
+        }
+
+        // erase / clear
+
+        iterator erase(const_iterator pos);
+        iterator erase(const_iterator first, const_iterator last);
+
+        void     clear();
+
+        // resize
+
+        void     resize(size_type new_size) { resize(new_size, value_type()); }
+        void     resize(size_type new_size, const value_type& value);
+
+        void     swap(list& rhs) noexcept
+        {
+            mystl::swap(node_, rhs.node_);
+            mystl::swap(size_, rhs.size_);
+        }
+
+        // list 相关操作
+
+        void splice(const_iterator pos, list& other);
+        void splice(const_iterator pos, list& other, const_iterator it);
+        void splice(const_iterator pos, list& other, const_iterator first, const_iterator last);
+
+        void remove(const value_type& value)
+        { remove_if([&](const value_type& v) {return v == value; }); }
+        template <class UnaryPredicate>
+        void remove_if(UnaryPredicate pred);
+
+        void unique()
+        { unique(mystl::equal_to<T>()); }
+        template <class BinaryPredicate>
+        void unique(BinaryPredicate pred);
+
+        void merge(list& x)
+        { merge(x, mystl::less<T>()); }
+        template <class Compare>
+        void merge(list& x, Compare comp);
+
+        void sort()
+        { list_sort(begin(), end(), size(), mystl::less<T>()); }
+        template <class Compared>
+        void sort(Compared comp)
+        { list_sort(begin(), end(), size(), comp); }
+
+        void reverse();
+
+        private:
+        // helper functions
+
+        // create / destroy node
+        template <class ...Args>
+        node_ptr create_node(Args&& ...agrs);
+        void     destroy_node(node_ptr p);
+
+        // initialize
+        void      fill_init(size_type n, const value_type& value);
+        template <class Iter>
+        void      copy_init(Iter first, Iter last);
+
+        // link / unlink
+        iterator  link_iter_node(const_iterator pos, base_ptr node);
+        void      link_nodes(base_ptr p, base_ptr first, base_ptr last);
+        void      link_nodes_at_front(base_ptr first, base_ptr last);
+        void      link_nodes_at_back(base_ptr first, base_ptr last);
+        void      unlink_nodes(base_ptr f, base_ptr l);
+
+        // assign
+        void      fill_assign(size_type n, const value_type& value);
+        template <class Iter>
+        void      copy_assign(Iter first, Iter last);
+
+        // insert
+        iterator  fill_insert(const_iterator pos, size_type n, const value_type& value);
+        template <class Iter>
+        iterator  copy_insert(const_iterator pos, size_type n, Iter first);
+
+        // sort
+        template <class Compared>
+        iterator  list_sort(iterator first, iterator last, size_type n, Compared comp);
+
     };
 
+    template<class T>
+    typename list<T>::iterator list<T>::erase(const_iterator pos){
+        MYSTL_DEBUG(pos!=cend());
+        auto n=pos.node_;//base_ptr
+        auto next=n->next;
+        unlink_nodes(n,n);
+        destroy_node(n->as_node());
+        --size_;
+        return iterator(next);
+    }
+    
+    template<class T>
+    typename list<T>::iterator list<T>::erase(const_iterator first,const_iterator last){
+        if(first!=last){
+            unlink_nodes(first,last);
+            while(first!=last){
+                auto cur=first.node_;
+                ++first;
+                destroy_node(cur->as_node());
+                --size;
+            }
+        }
+        return iterator(last.node_);
+    }
+
+    template<class T>
+    void list<T>::clear(){
+        if(size_!=0){
+            auto cur=node_->next;//第一个节点
+            for(base_ptr next=cur->next;cur!=node_;next=cur->next){
+                destroy_node(cur->as_node());
+            }
+            node_->unlink();//prev=next=self
+            size_=0;
+        }
+    }
+
+    template<class T>
+    void list<T>::resize(size_type new_size,const value_type& value){
+        auto i=begin();//iterator
+        size_type len=0;
+        while(i!=end() && len<new_size){
+            ++i;
+            ++len;
+        }
+        if(len==new_size){
+            erase(i,node_);
+        }
+        else{
+            insert(node_,new_size-len,value);
+        }
+    }
+
+    //将list x拼接在pos位置之前
+    template<class T>
+    void list<T>::splice(const_iterator pos,list& x){
+        MYSTL_DEBUG(this!=&x);
+        THROW_LENGTH_ERROR_IF(size_>max_size()-x.size_,"too long");
+
+        auto first=x.node_->next;
+        auto last=x.node->prev;
+        x.unlink_nodes(first,last);//和dummy解开连接
+        link_nodes(pos.node_,first,last);
+        size_+=x.size_;
+        x.size_=0;
+    }
+
+    //it所指的节点放在pos之前
+    template<class T>
+    void list<T>::splice(const_iterator pos,list& x,const_iterator it){
+        if(pos.node_!=it.node_&&pos.node_!=it.node_->next){
+            THROW_LENGTH_ERROR_IF(size_>max_size()-1,"too long");
+            auto f=it.node_;
+            x.unlink_nodes(f,f);
+            link_nodes(pos.node_,f,f);
+            ++size_;
+            --x.size_;
+        }
+    }
+
+    //将 x的[first,last)内的节点连接在pos之前
+    template<class T>
+    void list<T>::splice(const_iterator pos,list& x, const_iterator first,const_iterator last){
+        if(first!=last&&this!=&x){
+            size_type len=mystl::distance(first,last);
+            THROW_LENGTH_ERROR_IF(size_>max_size()-len,"too long");
+            auto first=first.node_;
+            auto last=last.node_->prev;
+
+            x.unlink_nodes(first,last);
+            link_nodes(pos.node_,first,last);
+            size_+=len;
+            x.size_-=len;
+        }
+    }
+
+    template<class T>
+    template<class UnaryPredicate> //unarypredicate一元谓词
+    void list<T>::remove_if(UnaryPredicate pred){
+        auto first=begin();
+        auto last=end();
+        for(auto next=first;first!=last;first=next){
+            ++next;
+            if(pred(*first)){
+                erase(first);
+            }
+        }
+    }
+
+    template<class T>
+    template<class BinaryPredicate>
+    void list<T>::unique(BinaryPredicate pred){
+        auto i=begin();
+        auto e=end();
+        auto j=i;
+        while(j!=e){
+            if(pred(*i,*j)){
+                erase(j);
+            }else{
+                i=j;
+            }
+            j=i;
+            ++j;
+        }
+    }
+
+    template<class T>
+    void list<T>::link_nodes(base_ptr pos,base_ptr first,base_ptr last){
+        pos->prev->next=first;
+        first->prev=pos->prev;
+        pos->prev=last;
+        last->next=pos;
+    }
+
+    template<class T>
+    void list<T>::unlink_nodes(base_ptr first,base_ptr last){
+        first->prev->next=last->next;
+        last->next->prev=first->prev;
+    }
+
+    //先调用析构函数，后delete   
+    template<class T>
+    void list<T>::destroy_node(node_ptr p){
+        data_allocator::destroy(mystl::address_of(p->value));
+        node_allocator::deallocate(p);
+    }
 }
 
 #endif
