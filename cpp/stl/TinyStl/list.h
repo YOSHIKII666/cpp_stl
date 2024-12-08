@@ -694,6 +694,391 @@ namespace mystl
         }
     }
 
+    //按照comp为true的顺序，与另一个list进行合并
+    template<class T>
+    template<class Compare>
+    void list<T>::merge(list &x, Compare comp) {
+        if(this !=  &x) {
+            //这种写法是为了防止越界
+            THROW_LENGTH_ERROR_IF(size_>max_size()-x.size_,"too long");
+
+            auto first1=begin();
+            auto last1=end();
+            auto first2=x.begin();
+            auto last2=x.begin();
+
+            while(first1!=last1 && first2!=last2) {
+                if(comp(*first2,first1)) {
+                    auto next=first2;
+                    ++next;
+                    for(;next!=last2&&comp(*next,*first1);++next);
+                    auto f=first2.node_;
+                    auto l=next.node_->prev;
+                    f2=next;
+
+                    x.unlink_nodes(f,l);
+                    link_nodes(first1.node_,f,l);
+                    ++first1;
+                }else {
+                    ++first1;
+                }
+            }
+            if(first2!=last2) {
+                auto f=first2.node_;
+                auto l=last2.node_->prev;
+                x.unlink_nodes(f,l);
+                link_nodes(last1.node_,f,l);
+            }
+            size_+=x.size_;
+            x.size_=0;
+        }
+    }
+
+    template<class T>
+    void list<T>::reverse() {
+        if(size_<=1) return;
+        auto i=begin();
+        auto e=end();
+
+        while(i.node_!=e.node_) {
+            mystl::swap(i.node_->prev,i.node_->next);
+            i.node_=i.node_->prev;
+        }
+        mystl::swap(e.node_->prev,e.node_->next);
+    }
+
+    template<class T>
+    template<class... Args>
+    typename list<T>::node_ptr list<T>::create_node(Args &&... agrs) {
+        node_ptr p=node_allocator::allocate(1); //allocate，分配n*size_type个空间
+        try {
+            data_allocator::construct(mystl::address_of(p->value),mystl::forward<Args>(args)...);//(ptr,value)
+            p->prev=nullptr;
+            p->next=nullptr;
+        }catch(...) {
+            node_allocator::deallocate(p);
+            throw;
+        }
+        return p;
+    }
+
+    template<class T>
+    void list<T>::fill_init(size_type n, const value_type &value) {
+        node_=base_allocator::allocate(1);
+        node_->unlink();
+        size_=n;
+        try {
+            for(;n>0;n--) {
+                auto node=create_node(value);
+                link_nodes_at_back(node->as_base(),node->as_base());
+            }
+        }catch(...) {
+            clear();
+            base_allocator::deallocate(node_);
+            node_=nullptr;
+            throw;
+        }
+    }
+
+    template <class T>
+    template <class Iter>
+    void list<T>::copy_init(Iter first, Iter last)
+    {
+        node_ = base_allocator::allocate(1);
+        node_->unlink();
+        size_type n = mystl::distance(first, last);
+        size_ = n;
+        try
+        {
+            for (; n > 0; --n, ++first)
+            {
+                auto node = create_node(*first);
+                link_nodes_at_back(node->as_base(), node->as_base());
+            }
+        }
+        catch (...)
+        {
+            clear();
+            base_allocator::deallocate(node_);
+            node_ = nullptr;
+            throw;
+        }
+    }
+
+    template<class T>
+    typename list<T>::iterator list<T>::link_iter_node(const_iterator pos, base_ptr node) {
+        if(pos==node_->next) {
+            link_nodes_at_front(node,node);
+        }
+        else if(pos==node_) {
+            link_nodes_at_back(node,node);
+        }else {
+            link_nodes(pos.node_,node,node);
+        }
+        return iterator(node);
+    }
+
+
+    //在尾部连接[first,last]
+    template<class T>
+    void list<T>::link_nodes_at_back(base_ptr first, base_ptr last) {
+        last->next=node_;
+        first->prev=node_->prev;
+        first->prev->next=first;
+        node_->prev=last;
+    }
+
+    template<class T>
+    void list<T>::link_nodes_at_front(base_ptr first, base_ptr last) {
+        first->prev=node_;
+        last->next=node_->next;
+        last->next->prev=last;
+        node_->next=first;
+    }
+
+    //为n个元素为容器元素赋值
+    template<class T>
+    void list<T>::fill_assign(size_type n, const value_type &value) {
+        auto i=begin();
+        auto e=end();
+        for(;n>0&&i!=e;--n,++i) {
+            *i=value;
+        }
+        if(n>0) {
+            insert(e,n,value);
+        }else {
+            erase(i,e);
+        }
+    }
+
+    template<class T>
+    template<class Iter>
+    void list<T>::copy_assign(Iter first, Iter last) {
+        auto i=begin();
+        auto e=end();
+        for(;first!=last;++first,++i) {
+            *i=*first;
+        }
+        if(first==last) {
+            erase(i,e);
+        }else {
+            insert(e,first,last);
+        }
+    }
+
+    template <class T>
+    typename list<T>::iterator
+    list<T>::fill_insert(const_iterator pos, size_type n, const value_type& value)
+    {
+      iterator r(pos.node_);
+      if (n != 0)
+      {
+        const auto add_size = n;
+        auto node = create_node(value);
+        node->prev = nullptr;
+        r = iterator(node);
+        iterator end = r;
+        try
+        {
+          // 前面已经创建了一个节点，还需 n - 1 个
+          for (--n; n > 0; --n, ++end)
+          {
+            auto next = create_node(value);
+            end.node_->next = next->as_base();  // link node
+            next->prev = end.node_;
+          }
+          size_ += add_size;
+        }
+        catch (...)
+        {
+          auto enode = end.node_;
+          while (true)
+          {
+            auto prev = enode->prev;
+            destroy_node(enode->as_node());
+            if (prev == nullptr)
+              break;
+            enode = prev;
+          }
+          throw;
+        }
+        link_nodes(pos.node_, r.node_, end.node_);
+      }
+      return r;
+    }
+
+    // 在 pos 处插入 [first, last) 的元素
+    template <class T>
+    template <class Iter>
+    typename list<T>::iterator
+    list<T>::copy_insert(const_iterator pos, size_type n, Iter first)
+    {
+      iterator r(pos.node_);
+      if (n != 0)
+      {
+        const auto add_size = n;
+        auto node = create_node(*first);
+        node->prev = nullptr;
+        r = iterator(node);
+        iterator end = r;
+        try
+        {
+          for (--n, ++first; n > 0; --n, ++first, ++end)
+          {
+            auto next = create_node(*first);
+            end.node_->next = next->as_base();  // link node
+            next->prev = end.node_;
+          }
+          size_ += add_size;
+        }
+        catch (...)
+        {
+          auto enode = end.node_;
+          while (true)
+          {
+            auto prev = enode->prev;
+            destroy_node(enode->as_node());
+            if (prev == nullptr)
+              break;
+            enode = prev;
+          }
+          throw;
+        }
+        link_nodes(pos.node_, r.node_, end.node_);
+      }
+      return r;
+    }
+
+    // 对 list 进行归并排序，返回一个迭代器指向区间最小元素的位置
+    template <class T>
+    template <class Compared>
+    typename list<T>::iterator
+    list<T>::list_sort(iterator f1, iterator l2, size_type n, Compared comp)
+    {
+      if (n < 2)
+        return f1;
+
+      if (n == 2)
+      {
+        if (comp(*--l2, *f1))
+        {
+          auto ln = l2.node_;
+          unlink_nodes(ln, ln);
+          link_nodes(f1.node_, ln, ln);
+          return l2;
+        }
+        return f1;
+      }
+
+      auto n2 = n / 2;
+      auto l1 = f1;
+      mystl::advance(l1, n2);
+      auto result = f1 = list_sort(f1, l1, n2, comp);  // 前半段的最小位置
+      auto f2 = l1 = list_sort(l1, l2, n - n2, comp);  // 后半段的最小位置
+
+      // 把较小的一段区间移到前面
+      if (comp(*f2, *f1))
+      {
+        auto m = f2;
+        ++m;
+        for (; m != l2 && comp(*m, *f1); ++m)
+          ;
+        auto f = f2.node_;
+        auto l = m.node_->prev;
+        result = f2;
+        l1 = f2 = m;
+        unlink_nodes(f, l);
+        m = f1;
+        ++m;
+        link_nodes(f1.node_, f, l);
+        f1 = m;
+      }
+      else
+      {
+        ++f1;
+      }
+
+      // 合并两段有序区间
+      while (f1 != l1 && f2 != l2)
+      {
+        if (comp(*f2, *f1))
+        {
+          auto m = f2;
+          ++m;
+          for (; m != l2 && comp(*m, *f1); ++m)
+            ;
+          auto f = f2.node_;
+          auto l = m.node_->prev;
+          if (l1 == f2)
+            l1 = m;
+          f2 = m;
+          unlink_nodes(f, l);
+          m = f1;
+          ++m;
+          link_nodes(f1.node_, f, l);
+          f1 = m;
+        }
+        else
+        {
+          ++f1;
+        }
+      }
+      return result;
+    }
+
+    // 重载比较操作符
+    template <class T>
+    bool operator==(const list<T>& lhs, const list<T>& rhs)
+    {
+      auto f1 = lhs.cbegin();
+      auto f2 = rhs.cbegin();
+      auto l1 = lhs.cend();
+      auto l2 = rhs.cend();
+      for (; f1 != l1 && f2 != l2 && *f1 == *f2; ++f1, ++f2)
+        ;
+      return f1 == l1 && f2 == l2;
+    }
+
+    template <class T>
+    bool operator<(const list<T>& lhs, const list<T>& rhs)
+    {
+      return mystl::lexicographical_compare(lhs.cbegin(), lhs.cend(), rhs.cbegin(), rhs.cend());
+    }
+
+    template <class T>
+    bool operator!=(const list<T>& lhs, const list<T>& rhs)
+    {
+      return !(lhs == rhs);
+    }
+
+    template <class T>
+    bool operator>(const list<T>& lhs, const list<T>& rhs)
+    {
+      return rhs < lhs;
+    }
+
+    template <class T>
+    bool operator<=(const list<T>& lhs, const list<T>& rhs)
+    {
+      return !(rhs < lhs);
+    }
+
+    template <class T>
+    bool operator>=(const list<T>& lhs, const list<T>& rhs)
+    {
+      return !(lhs < rhs);
+    }
+
+    // 重载 mystl 的 swap
+    template <class T>
+    void swap(list<T>& lhs, list<T>& rhs) noexcept
+    {
+      lhs.swap(rhs);
+    }
+
+
+
+
     template<class T>
     void list<T>::link_nodes(base_ptr pos,base_ptr first,base_ptr last){
         pos->prev->next=first;
