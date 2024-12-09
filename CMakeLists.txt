@@ -21,4 +21,5 @@ add_executable(cpp_stl
         cpp/stl/TinyStl/queue.h
         cpp/stl/TinyStl/stack.h
         cpp/stl/TinyStl/basic_string.h
+        cpp/stl/TinyStl/list.h
 )
