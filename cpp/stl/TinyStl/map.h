@@ -266,7 +266,7 @@ namespace mystl
         template <class Key, class T, class Compare>
         bool operator<=(const map<Key, T, Compare>& lhs, const map<Key, T, Compare>& rhs)
         {
-        return !(rhs < lhs);
+        return !(rhs < lhs);  
         }
 
         template <class Key, class T, class Compare>

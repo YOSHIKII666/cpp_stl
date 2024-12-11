@@ -1269,7 +1269,7 @@ namespace mystl
             node->parent=x;
             auto base_node=node->get_base_ptr();
             if(x==header_) {
-                root()=base_node;
+                root()=base_node;  
                 leftmost()=base_node;
                 rightmost()=base_node;
             }else if(add_to_left) {
