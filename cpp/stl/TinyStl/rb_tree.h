@@ -100,7 +100,7 @@ namespace mystl
         typedef rb_tree_node<T>* node_ptr;
     };
 
-    template<T>
+    template<class T>
     struct rb_tree_node_base {
         typedef rb_tree_color_type color_type;
         typedef rb_tree_node_base<T>* base_ptr;
@@ -1038,8 +1038,10 @@ namespace mystl
         THROW_LENGTH_ERROR_IF(node_count_>max_size()-1,"size is too long");
         auto res=get_insert_unique_pos(value_traits::get_key(value));
         if(res.second) {
+            //插入红黑树中
             return mystl::make_pair(insert_value_at(res.first.first,value,res.first.second),true);
         }
+        //没有插入红黑树
         return mystl::make_pair(res.first.first,false);
     }
 
