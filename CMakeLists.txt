@@ -22,4 +22,6 @@ add_executable(cpp_stl
         cpp/stl/TinyStl/stack.h
         cpp/stl/TinyStl/basic_string.h
         cpp/stl/TinyStl/list.h
+        cpp/stl/TinyStl/rb_tree.h
+        cpp/stl/TinyStl/map.h
 )

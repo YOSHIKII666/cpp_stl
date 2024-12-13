@@ -133,6 +133,65 @@ namespace mystl{
             }
         }
     };
+
+    // 重载比较操作符
+    template <class Ty1, class Ty2>
+    bool operator==(const pair<Ty1, Ty2>& lhs, const pair<Ty1, Ty2>& rhs)
+    {
+        return lhs.first == rhs.first && lhs.second == rhs.second;
+    }
+
+    template <class Ty1, class Ty2>
+    bool operator<(const pair<Ty1, Ty2>& lhs, const pair<Ty1, Ty2>& rhs)
+    {
+        return lhs.first < rhs.first || (lhs.first == rhs.first && lhs.second < rhs.second);
+    }
+
+    template <class Ty1, class Ty2>
+    bool operator!=(const pair<Ty1, Ty2>& lhs, const pair<Ty1, Ty2>& rhs)
+    {
+        return !(lhs == rhs);
+    }
+
+    template <class Ty1, class Ty2>
+    bool operator>(const pair<Ty1, Ty2>& lhs, const pair<Ty1, Ty2>& rhs)
+    {
+        return rhs < lhs;
+    }
+
+    template <class Ty1, class Ty2>
+    bool operator<=(const pair<Ty1, Ty2>& lhs, const pair<Ty1, Ty2>& rhs)
+    {
+        return !(rhs < lhs);
+    }
+
+    template <class Ty1, class Ty2>
+    bool operator>=(const pair<Ty1, Ty2>& lhs, const pair<Ty1, Ty2>& rhs)
+    {
+        return !(lhs < rhs);
+    }
+
+    // 重载 mystl 的 swap
+    template <class Ty1, class Ty2>
+    void swap(pair<Ty1, Ty2>& lhs, pair<Ty1, Ty2>& rhs)
+    {
+        lhs.swap(rhs);
+    }
+
+    // 全局函数，让两个数据成为一个 pair
+    template <class Ty1, class Ty2>
+    pair<Ty1, Ty2> make_pair(Ty1&& first, Ty2&& second)
+    {
+        return pair<Ty1, Ty2>(mystl::forward<Ty1>(first), mystl::forward<Ty2>(second));
+    }
+
+    // 全局函数，让两个数据成为一个 pair
+    template <class Ty1, class Ty2>
+    pair<Ty1, Ty2> make_pair(Ty1&& first, Ty2&& second)
+    {
+        return pair<Ty1, Ty2>(mystl::forward<Ty1>(first), mystl::forward<Ty2>(second));
+    }
+
 }
 
 #endif
