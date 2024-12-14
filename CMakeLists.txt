@@ -24,4 +24,5 @@ add_executable(cpp_stl
         cpp/stl/TinyStl/list.h
         cpp/stl/TinyStl/rb_tree.h
         cpp/stl/TinyStl/map.h
+        cpp/stl/TinyStl/hashtable.h
 )
