@@ -486,6 +486,34 @@ struct ht_const_iterator :public ht_iterator_base<T, Hash, KeyEqual>
 
     private:
         bucket_type bucket_;
+        size_type bucket_size_;
+        size_type   size_;
+        float mlf_;
+        hasher hash_;
+        key_equal equal_;
+    private:
+        bool is_equal(const key_type& key1,const key_type& key2) {
+            return equal_(key1,key2);
+        }
+        bool is_equal(const key_type& key1,const key_type& key2) const{
+            return equal_(key1,key2);
+        }
+        const_iterator M_cit(node_ptr node) const noexcept {
+            return const_iterator(node,const_cast<hashtable*>(this));
+        }
+        iterator M_begin() noexcept {
+            for(size_type n=0;n<bucket_size_;++n) {
+                if(bucket_[n]) return iterator(bucket_[n],this);
+            }
+            return iterator(nullptr,this);
+        }
+
+        const_iterator M_begin() const noexcept {
+            for(size_type n=0;n<bucket_size_;++n) {
+                if(bucket_[n]) return M_cit(bucket_[n]);
+            }
+            return M_cit(nullptr);
+        }
     };
 
 }
