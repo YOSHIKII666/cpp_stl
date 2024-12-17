@@ -514,7 +514,319 @@ struct ht_const_iterator :public ht_iterator_base<T, Hash, KeyEqual>
             }
             return M_cit(nullptr);
         }
+
+    public:
+        explicit hashtable(size_type bucket_count,const Hash& hash=Hash(),const KeyEqual& equal=KeyEqual())
+            :size_(0),mlf_(1.0f),hash_(hash),equal_(equal) {
+            init(bucket_count);
+        }
+
+        template<class Iter ,typename std::enable_if<mystl::is_input_iterator<Iter>::value,int>::type=0>
+        hashtable(Iter first,Iter last,size_type bucket_count,const Hash& hash=Hash(),const KeyEqual& equal =KeyEqual())
+            :size_(mystl::distance(first,last)),mlf_(1.0f),hash_(hash),equal_(equal) {
+            init(mystl::max(bucket_count,static_cast<size_type>(mystl::distance(first,last))));
+        }
+
+        hashtable(const hashtable& rhs):hash_(rhs.hash_),equal_(rhs.equal_) {
+            copy_init(rhs);
+        }
+
+        hashtable(hashtable&& rhs) noexcept:bucket_size_(rhs.bucket_size_),size_(rhs.size_),mlf_(rhs.mlf_),hash_(rhs.hash_),equal_(rhs.equal_) {
+            bucket_=mystl::move(rhs.bucket_);
+            rhs.bucket_size_=0;
+            rhs.size_=0;
+            rhs.mlf_=0.0f;
+        }
+        hashtable& operator=(const hashtable& rhs);
+        hashtable& operator=(hashtable&& rhs) noexcept;
+
+        ~hashtable() { clear(); }
+
+        // 迭代器相关操作
+        iterator       begin()        noexcept
+        { return M_begin(); }
+        const_iterator begin()  const noexcept
+        { return M_begin(); }
+        iterator       end()          noexcept
+        { return iterator(nullptr, this); }
+        const_iterator end()    const noexcept
+        { return M_cit(nullptr); }
+
+        const_iterator cbegin() const noexcept
+        { return begin(); }
+        const_iterator cend()   const noexcept
+        { return end(); }
+
+        // 容量相关操作
+        bool      empty()    const noexcept { return size_ == 0; }
+        size_type size()     const noexcept { return size_; }
+        size_type max_size() const noexcept { return static_cast<size_type>(-1); }
+
+        // 修改容器相关操作
+
+        // emplace / empalce_hint
+
+        template <class ...Args>
+        iterator emplace_multi(Args&& ...args);
+
+        template <class ...Args>
+        pair<iterator, bool> emplace_unique(Args&& ...args);
+
+        // [note]: hint 对于 hash_table 其实没有意义，因为即使提供了 hint，也要做一次 hash，
+        // 来确保 hash_table 的性质，所以选择忽略它
+        template <class ...Args>
+        iterator emplace_multi_use_hint(const_iterator /*hint*/, Args&& ...args)
+        { return emplace_multi(mystl::forward<Args>(args)...); }
+
+        template <class ...Args>
+        iterator emplace_unique_use_hint(const_iterator /*hint*/, Args&& ...args)
+        { return emplace_unique(mystl::forward<Args>(args)...).first; }
+
+        // insert
+
+        iterator             insert_multi_noresize(const value_type& value);
+        pair<iterator, bool> insert_unique_noresize(const value_type& value);
+
+        iterator insert_multi(const value_type& value)
+        {
+            rehash_if_need(1);
+            return insert_multi_noresize(value);
+        }
+        iterator insert_multi(value_type&& value)
+        { return emplace_multi(mystl::move(value)); }
+
+
+        pair<iterator, bool> insert_unique(const value_type& value)
+        {
+            rehash_if_need(1);
+            return insert_unique_noresize(value);
+        }
+        pair<iterator, bool> insert_unique(value_type&& value)
+        { return emplace_unique(mystl::move(value)); }
+
+        // [note]: 同 emplace_hint
+        iterator insert_multi_use_hint(const_iterator /*hint*/, const value_type& value)
+        { return insert_multi(value); }
+        iterator insert_multi_use_hint(const_iterator /*hint*/, value_type&& value)
+        { return emplace_multi(mystl::move(value)); }
+
+        iterator insert_unique_use_hint(const_iterator /*hint*/, const value_type& value)
+        { return insert_unique(value).first; }
+        iterator insert_unique_use_hint(const_iterator /*hint*/, value_type&& value)
+        { return emplace_unique(mystl::move(value)); }
+
+        template <class InputIter>
+        void insert_multi(InputIter first, InputIter last)
+        { copy_insert_multi(first, last, iterator_category(first)); }
+
+        template <class InputIter>
+        void insert_unique(InputIter first, InputIter last)
+        { copy_insert_unique(first, last, iterator_category(first)); }
+
+        // erase / clear
+
+        void      erase(const_iterator position);
+        void      erase(const_iterator first, const_iterator last);
+
+        size_type erase_multi(const key_type& key);
+        size_type erase_unique(const key_type& key);
+
+        void      clear();
+
+        void      swap(hashtable& rhs) noexcept;
+
+        // 查找相关操作
+
+        size_type                            count(const key_type& key) const;
+
+        iterator                             find(const key_type& key);
+        const_iterator                       find(const key_type& key) const;
+
+        pair<iterator, iterator>             equal_range_multi(const key_type& key);
+        pair<const_iterator, const_iterator> equal_range_multi(const key_type& key) const;
+
+        pair<iterator, iterator>             equal_range_unique(const key_type& key);
+        pair<const_iterator, const_iterator> equal_range_unique(const key_type& key) const;
+
+        // bucket interface
+
+        local_iterator       begin(size_type n)        noexcept
+        {
+            MYSTL_DEBUG(n < size_);
+            return buckets_[n];
+        }
+        const_local_iterator begin(size_type n)  const noexcept
+        {
+            MYSTL_DEBUG(n < size_);
+            return buckets_[n];
+        }
+        const_local_iterator cbegin(size_type n) const noexcept
+        {
+            MYSTL_DEBUG(n < size_);
+            return buckets_[n];
+        }
+
+        local_iterator       end(size_type n)          noexcept
+        {
+            MYSTL_DEBUG(n < size_);
+            return nullptr;
+        }
+        const_local_iterator end(size_type n)    const noexcept
+        {
+            MYSTL_DEBUG(n < size_);
+            return nullptr;
+        }
+        const_local_iterator cend(size_type n)   const noexcept
+        {
+            MYSTL_DEBUG(n < size_);
+            return nullptr;
+        }
+
+        size_type bucket_count()                 const noexcept
+        { return bucket_size_; }
+        size_type max_bucket_count()             const noexcept
+        { return ht_prime_list[PRIME_NUM - 1]; }
+
+        size_type bucket_size(size_type n)       const noexcept;
+        size_type bucket(const key_type& key)    const
+        { return hash(key); }
+
+        // hash policy
+
+        float load_factor() const noexcept
+        { return bucket_size_ != 0 ? (float)size_ / bucket_size_ : 0.0f; }
+
+        float max_load_factor() const noexcept
+        { return mlf_; }
+        void max_load_factor(float ml)
+        {
+            THROW_OUT_OF_RANGE_IF(ml != ml || ml < 0, "invalid hash load factor");
+            mlf_ = ml;
+        }
+
+        void rehash(size_type count);
+
+        void reserve(size_type count)
+        { rehash(static_cast<size_type>((float)count / max_load_factor() + 0.5f)); }
+
+        hasher    hash_fcn() const { return hash_; }
+        key_equal key_eq()   const { return equal_; }
+    private:
+        // hashtable 成员函数
+
+        // init
+        void      init(size_type n);
+        void      copy_init(const hashtable& ht);
+
+        // node
+        template  <class ...Args>
+        node_ptr  create_node(Args&& ...args);
+        void      destroy_node(node_ptr n);
+
+        // hash
+        size_type next_size(size_type n) const;
+        size_type hash(const key_type& key, size_type n) const;
+        size_type hash(const key_type& key) const;
+        void      rehash_if_need(size_type n);
+
+        // insert
+        template <class InputIter>
+        void copy_insert_multi(InputIter first, InputIter last, mystl::input_iterator_tag);
+        template <class ForwardIter>
+        void copy_insert_multi(ForwardIter first, ForwardIter last, mystl::forward_iterator_tag);
+        template <class InputIter>
+        void copy_insert_unique(InputIter first, InputIter last, mystl::input_iterator_tag);
+        template <class ForwardIter>
+        void copy_insert_unique(ForwardIter first, ForwardIter last, mystl::forward_iterator_tag);
+
+        // insert node
+        pair<iterator, bool> insert_node_unique(node_ptr np);
+        iterator             insert_node_multi(node_ptr np);
+
+        // bucket operator
+        void replace_bucket(size_type bucket_count);
+        void erase_bucket(size_type n, node_ptr first, node_ptr last);
+        void erase_bucket(size_type n, node_ptr last);
+
+        // comparision
+        bool equal_to_multi(const hashtable& other);
+        bool equal_to_unique(const hashtable& other);
     };
+
+    template<class T, class Hash, class KeyEqual>
+    hashtable<T, Hash, KeyEqual> &hashtable<T, Hash, KeyEqual>::operator=(const hashtable &rhs) {
+        if(this!=&rhs) {
+            hashtable tmp(rhs);
+            swap(tmp);
+        }
+        return *this;
+    }
+
+    template <class T, class Hash, class KeyEqual>
+    hashtable<T, Hash, KeyEqual>&
+    hashtable<T, Hash, KeyEqual>::
+    operator=(hashtable&& rhs) noexcept
+    {
+        hashtable tmp(mystl::move(rhs));
+        swap(tmp);
+        return *this;
+    }
+
+    template<class T, class Hash, class KeyEqual>
+    template<class... Args>
+    typename hashtable<T, Hash, KeyEqual>::iterator
+    hashtable<T, Hash, KeyEqual>::emplace_multi(Args &&... args) {
+        auto np = create_node(mystl::forward<Args>(args)...);
+        try {
+            if((float)(size_+_1)>(float)bucket_size_*max_load_factor()) {
+                rehash(size_+1);
+            }
+        }catch (...) {
+            destroy_node(np);
+            throw;
+        }
+        return insert_node_multi(np);
+    }
+
+
+    template<class T, class Hash, class KeyEqual>
+    template<class... Args>
+    typename hashtable<T, Hash, KeyEqual>::node_ptr hashtable<T, Hash, KeyEqual>::create_node(Args &&... args) {
+        node_ptr tmp=node_allocator::allocate(1);
+        try {
+            data_allocator::construct(mystl::address_of(tmp->value),mystl::forward<Args>(args)...);
+            tmp->next=nullptr;
+        }catch (...) {
+            node_allocator::deallocate(tmp);
+            throw;
+        }
+        return tmp;
+    }
+
+    template<class T, class Hash, class KeyEqual>
+    typename hashtable<T, Hash, KeyEqual>::iterator
+    hashtable<T, Hash, KeyEqual>::insert_node_multi(node_ptr np) {
+        const auto n=hash(value_traits::get_key(np->value));//hash函数计算出位置
+        auto cur=bucket_[n];
+        if(cur==nullptr) {
+            //如果哈希函数计算出的那个位置为空的，直接插入
+            bucket_[n]=np;
+            ++size_;
+            return iterator(np,this);//node_ptr(hashtable_node<T>),contain_ptr(hashtable*)
+        }
+        for(;cur;cur=cur->next) {
+            if(is_equal(value_traits::get_key(cur->value),value_traits::get_key(np->value))) {
+                np->next=cur->next;
+                cur->next=np;
+                ++size_;
+                return iterator(np,this);
+            }
+        }
+        np->next=bucket_[n];
+        bucket_[n]=np;
+        ++size_;
+        return iterator(np,this);
+    }
 
 }
 #endif
