@@ -25,4 +25,11 @@ add_executable(cpp_stl
         cpp/stl/TinyStl/rb_tree.h
         cpp/stl/TinyStl/map.h
         cpp/stl/TinyStl/hashtable.h
+        cpp/stl/TinyStl/unordered_map.h
+        cpp/stl/TinyStl/unordered_set.h
+        cpp/stl/TinyStl/set_algo.h
+        cpp/stl/TinyStl/numeric.h
+        cpp/stl/Test/Lib/redbud/platform.h
+        cpp/stl/Test/Lib/redbud/io/color.h
+        cpp/stl/TinyStl/algorithm.h
 )
