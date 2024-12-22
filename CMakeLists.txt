@@ -32,4 +32,5 @@ add_executable(cpp_stl
         cpp/stl/Test/Lib/redbud/platform.h
         cpp/stl/Test/Lib/redbud/io/color.h
         cpp/stl/TinyStl/algorithm.h
+        cpp/stl/Test/test.h
 )
